@@ -1,27 +1,30 @@
 const app = document.querySelector(`.app`);
 const display = document.querySelector(`.current-display`);
-const operators = document.querySelectorAll(".function");
+const operators = document.querySelectorAll(`.function`);
 
 app.addEventListener(`click`, (e) => {
-  activeOperator(e.target.innerText)
   if(e.target.classList.contains(`numbers`)){
-    writeNumbers(e.target.innerText);
+    display.innerText = writeNumbers(e.target.innerText);
   } else if(e.target.classList.contains(`comma`)){
-    addComma();
+    display.innerText = addComma();
   } else if(e.target.classList.contains(`delete`)) {
-    clear();
+    display.innerText = clear();
   } else if(e.target.classList.contains(`function`)){
-    operatorClick(e.target.innerText);
+    display.innerText = operatorClick(e.target.innerText);
   } else if(e.target.classList.contains(`equals`)){
-    equals();
+    display.innerText = equals();
   } else if(e.target.classList.contains(`sign`)){
-    changeSign();
+    display.innerText = changeSign();
   } else if(e.target.classList.contains(`percent`)){
-    percentage();
+    display.innerText = percentage();
   } else if(e.target.classList.contains(`current-display`)){
-    backSpace();
+    display.innerText = backSpace();
   }
+  activeOperator(e.target.innerText, e.target.classList);
 })
+
+// returning value of the functions, value that will be displayed on calculator screen
+let result = 0;
 
 // boolean value for checking if any number entered before doing operation
 let numberEntered = false;
@@ -36,19 +39,21 @@ const writeNumbers = (number) => {
   numberEntered = true;
   if (display.textContent.split(`-`).join(``).split(``).length < 10) {
     if (store.length === 0 && display.innerText === `0`) {
-      display.textContent = number;
+      return result = number;
     } else if (!nextNumber) {
-      display.textContent += number;
+      return result += number;
     } else if (nextNumber) {
-      display.textContent = number;
       nextNumber = false;
+      return result = number;
     }
   } else {
     if(store.length !== 0 && nextNumber){
-      display.textContent = number;
       nextNumber = false;
+      return result = number;
     } else if(store.length !== 0 && !nextNumber){
-      display.textContent += number;
+      return result += number;
+    } else {
+      return result;
     }
   }
 }
@@ -56,24 +61,50 @@ const writeNumbers = (number) => {
 const addComma = () => {
   if(!display.textContent.includes(`,`)){
     if(!nextNumber){
-      display.textContent += `,`;
+      return result += `,`;
     } else {
-      display.textContent = `0,`
       nextNumber = false;
+      return result = `0,`
     }
   } else {
     if(nextNumber) {
-      display.textContent = `0,`;
       nextNumber = false;
+      return result = `0,`;
     }
+    return result;
   }
 } 
 
 const clear = () => {
-  display.textContent = `0`;
   numberEntered = false;
   nextNumber = false;
   store = [];
+  return result = `0`;
+}
+
+// onclick function for operator buttons
+const operatorClick = (operand) => {
+  if (store.length === 0 && numberEntered) {
+    store.push(Number(display.innerText.replace(`,`, `.`)));
+    store.push(operand);
+    numberEntered = false;
+    nextNumber = true;
+  } else if (store.length !== 0 && !numberEntered) {
+      if (typeof store[store.length - 1] !== `number`) {
+        store.pop();
+      } else {
+        store = [Number(display.innerText.replace(`,`, `.`))];
+      }
+      store.push(operand);
+      nextNumber = true;
+  } else if (store.length !== 0 && numberEntered) {
+    store.push(Number(display.innerText.replace(`,`, `.`)));
+    operate();
+    store.push(operand);
+    numberEntered = false;
+    nextNumber = true;
+  }  
+  return checkLength();
 }
 
 // checks store and does the math
@@ -93,33 +124,33 @@ const operate = () => {
       store = [store[i - 1] - store[i + 1]];
     }
   })
-  roundBigFloat();
+  return roundBigFloat();
 }
 
-// onclick function for operator buttons
-const operatorClick = (operand) => {
-  if (store.length === 0 && numberEntered) {
-    store.push(Number(display.innerText.replace(`,`, `.`)));
-    store.push(operand);
-    numberEntered = false;
-    nextNumber = true;
-  } else if (store.length !== 0 && !numberEntered) {
-      if (typeof store[store.length - 1] !== "number") {
-        store.pop();
-      } else {
-        store = [Number(display.innerText.replace(`,`, `.`))];
-      }
-      store.push(operand);
-      nextNumber = true;
-  } else if (store.length !== 0 && numberEntered) {
-    store.push(Number(display.innerText.replace(`,`, `.`)));
-    operate();
-    store.push(operand);
-    numberEntered = false;
-    nextNumber = true;
+const roundBigFloat = () => {
+  const number = store[0].toString();
+  if (number.includes(`.`)) {
+    const arr = number.split(``);
+    const comma = arr.indexOf(`.`);
+    if (arr.splice(comma + 1).length > 4) {
+      store = [Number(Number(number).toFixed(4))];
+    }
   }
-  
-  checkLength();
+  return store[0];
+};
+
+// checks if the number exceeds the max limit
+const checkLength = () => {
+  if(store[store.length - 1] === `undefined`){
+    store = [];
+    return result = `undefined`;
+  } else if(store.length !== 0 && store[0].toString().split(``).length < 11) {
+    return result = store[0].toString().replace(`.`, `,`);
+  } else if(store.length !== 0) {
+    alert(`Number of values that can be entered exceeded`);
+    return result;
+  }
+  return result;
 }
 
 const equals = () => {
@@ -134,37 +165,14 @@ const equals = () => {
     numberEntered = false;
     nextNumber = true;
   }
-  checkLength();
-}
-
-// checks if the number exceeds the max limit
-const checkLength = () => {
-  if(store[store.length - 1] === `undefined`){
-    display.innerText = `undefined`;
-    store = [];
-  } else if(store.length !== 0 && store[0].toString().split(``).length < 11) {
-    display.innerText = store[0].toString().replace(`.`, `,`);
-  } else if(store.length !== 0) {
-    alert("Number of values that can be entered exceeded");
-  }
-}
-
-const roundBigFloat = () => {
-  const number = store[0].toString();
-  if (number.includes(`.`)) {
-    const arr = number.split(``);
-    const comma = arr.indexOf(`.`);
-    if (arr.splice(comma + 1).length > 4) {
-      store = [Number(Number(number).toFixed(4))];
-    }
-  }
+  return checkLength();
 }
 
 const changeSign = () => {
   const changed = parseFloat(
-    Number(display.innerText.replace(",", ".")) * -1
+    Number(display.innerText.replace(`,`, `.`)) * -1
   );
-  display.innerText = changed.toString().replace(".", ",");
+  return result = changed.toString().replace(`.`, `,`);
 }
 
 const percentage = () => {
@@ -172,73 +180,86 @@ const percentage = () => {
   if (
     percentageValue.toString().split(`.`).join(``).split(``).length < 11
   ) {
-    display.innerText = percentageValue.toString().replace(`.`, `,`);
+    return result = percentageValue.toString().replace(`.`, `,`);
   } else {
     alert(`Number of values that can be entered exceeded`);
+    return result;
   }
 }
 
 // deletes only last digit
 const backSpace = () => {
-  const number = display.innerText.split(``);
-  number.pop();
-  display.innerText = number.join(``);
-  if(display.innerText === ``){
-    display.innerText = `0`;
+  if (!isOperatorActive()) {
+    const number = display.innerText.split(``);
+    number.pop();
+    result = number.join(``);
+    if (number.length === 0) {
+      return (result = `0`);
+    }
+  }
+  return result;
+}
+
+const isOperatorActive = () => {
+  for(let i = 0; i < operators.length; i++){
+    if(operators[i].classList.contains(`active-operator`)){
+      return true;
+    } 
   }
 }
 
 // keyboard events
-document.addEventListener("keydown", (e) => {
-  if (e.key >= "0" && e.key <= "9") {
-    writeNumbers(e.key)
+document.addEventListener(`keydown`, (e) => {
+  if (e.key >= `0` && e.key <= `9`) {
     removeColor();
+    display.innerText = writeNumbers(e.key)
   } else if(e.key === `Delete`) {
-    clear();
     removeColor();
+    display.innerText = clear();
   } else if(
     e.key === `+` ||
     e.key === `-` ||
     e.key === `*` ||
     e.key === `/`
     ) {
-      operatorClick(e.key);
+      display.innerText = operatorClick(e.key);
       activeOperator(e.key)
     } else if(
       e.key === `=` ||
       e.key === `Enter`
       ) {
-      equals();
+      display.innerText = equals();
     } else if(
       e.key === `,` ||
       e.key === `.`
     ) {
-      addComma();
+      display.innerText = addComma();
       removeColor();
     } else if(e.key === `Control`){
-      changeSign();
+      display.innerText = changeSign();
       removeColor();
     } else if(e.key === `%`){
       removeColor();
-      percentage();
+      display.innerText = percentage();
     } else if(e.key === `Backspace`){
-      removeColor();
-      backSpace();
+      display.innerText = backSpace();
     }
 });
 
-const activeOperator = (btn) => {
+// function to remove color from selected operator
+const removeColor = () => {
   operators.forEach((item) => {
-    if (item.classList.contains("function")) {
-      if (btn === item.innerText) {
-        item.classList.add("active-operator");
-      } else {
-        item.classList.remove("active-operator");
-      }
-    } else {
-      item.classList.remove("active-operator");
-    }
+    item.classList.remove(`active-operator`);
   });
+};
+
+// function to change color of the selected operator
+const activeOperator = (btn, classList = ``) => {
+  if(classList === ``){
+    keyCheck(btn);
+  } else if(!classList.contains(`app`) && !classList.contains(`current-display`)){
+    keyCheck(btn);
+  }
 
   if(btn === `/`){
     keyCheck(`÷`);
@@ -252,15 +273,9 @@ const activeOperator = (btn) => {
 const keyCheck = (op) => {
   operators.forEach((item) => {
     if (item.innerText === op) {
-      item.classList.add("active-operator");
+      item.classList.add(`active-operator`);
     } else {
-      item.classList.remove("active-operator");
+      item.classList.remove(`active-operator`);
     }
   });
-} 
-
-const removeColor = () => {
-  operators.forEach((item) => {
-    item.classList.remove("active-operator");
-  });
-};
+}
